@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { MOCK_SONGS, ARTIST_META } from '../constants';
-import { Play, Search, ChevronLeft, ChevronRight, Mic2, X, ChevronRight as ArrowRight } from 'lucide-react';
-import { Song, Genre } from '../types';
+import { useData } from '../contexts/DataContext';
+import { Play, Search, ChevronLeft, ChevronRight, Mic2, X, ChevronRight as ArrowRight, Loader2, RefreshCw } from 'lucide-react';
+import { Song, Genre, ArtistMeta } from '../types';
 
-type FilterType = 'ALL' | 'NEW' | Genre;
+// Relaxed FilterType to allow any string
+type FilterType = 'ALL' | 'NEW' | string;
 
 const Home: React.FC = () => {
+  const { songs, artistMeta, loading, refreshData } = useData();
   const [searchParams, setSearchParams] = useSearchParams();
   const [filter, setFilter] = useState<FilterType>('ALL');
   const [selectedArtist, setSelectedArtist] = useState<string | null>(null);
@@ -31,7 +33,7 @@ const Home: React.FC = () => {
   const [searchYears, setSearchYears] = useState<string[]>([]); // Empty means ALL
   const [searchCategories, setSearchCategories] = useState<FilterType[]>([]); // Empty means ALL
 
-  // Filters Definition
+  // Main Filters displayed on Home (Tabs)
   const filters: { id: FilterType; label: string }[] = [
     { id: 'ALL', label: '전체' },
     { id: 'NEW', label: 'NEW' },
@@ -54,15 +56,11 @@ const Home: React.FC = () => {
         setIsArtistListOpen(false);
         setFilter('ALL');
     } else if (filterParam) {
-        // Check if filterParam is valid
-        const validFilter = filters.find(f => f.id === filterParam);
-        if (validFilter) {
-            setFilter(validFilter.id as FilterType);
-            setSelectedArtist(null);
-            setIsArtistListOpen(false);
-        } else {
-             setFilter('ALL');
-        }
+        // Updated Logic: Trust the filter param from URL if it exists, even if not in main list.
+        // This fixes the issue where secondary chips (e.g., tags not in the main list) were ignored.
+        setFilter(filterParam);
+        setSelectedArtist(null);
+        setIsArtistListOpen(false);
     } else {
         // Reset if no params (e.g. clicking Logo to go to /)
         setSelectedArtist(null);
@@ -95,8 +93,27 @@ const Home: React.FC = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [lastScrollY]);
 
-  // Extract artists
-  const uniqueArtists = Array.from(new Set(MOCK_SONGS.map(s => s.artist))).sort();
+  // Sorting Logic: Korean -> English -> Number
+  const compareArtists = (a: string, b: string) => {
+    const getPriority = (str: string) => {
+        const char = str.charAt(0);
+        if (/[가-힣]/.test(char)) return 0; // Korean First
+        if (/[a-zA-Z]/.test(char)) return 1; // English Second
+        return 2; // Numbers/Symbols Last
+    };
+    
+    const priorityA = getPriority(a);
+    const priorityB = getPriority(b);
+    
+    if (priorityA !== priorityB) {
+        return priorityA - priorityB;
+    }
+    
+    return a.localeCompare(b, 'ko-KR');
+  };
+
+  // Extract artists from actual data and sort
+  const uniqueArtists = Array.from(new Set(songs.map(s => s.artist))).sort(compareArtists);
 
   // Artist Pagination Logic
   const totalArtistPages = Math.ceil(uniqueArtists.length / artistItemsPerPage);
@@ -106,7 +123,7 @@ const Home: React.FC = () => {
   );
 
   // Main Grid Filtering Logic
-  const filteredSongs = MOCK_SONGS.filter(song => {
+  const filteredSongs = songs.filter(song => {
     // Artist Priority
     if (selectedArtist) {
         return song.artist === selectedArtist;
@@ -114,23 +131,34 @@ const Home: React.FC = () => {
 
     // Category Filter
     if (filter === 'NEW') {
+      // 1. Try to use 'dateAdded' column (within 7 days)
+      if (song.dateAdded) {
+          const dateAdded = new Date(song.dateAdded).getTime();
+          const oneWeekAgo = new Date().getTime() - (7 * 24 * 60 * 60 * 1000);
+          return dateAdded >= oneWeekAgo;
+      }
+      // 2. Fallback: If no dateAdded, check if Release Year is current year (Temporary)
       const currentYear = new Date().getFullYear();
       return parseInt(song.releaseYear) >= currentYear;
     } else if (filter !== 'ALL') {
-      return song.genre === filter;
+      // Use tags array to allow multi-category matching
+      // Filter can be ANY string now (from URL)
+      return song.tags && song.tags.includes(filter as string);
     }
 
     return true;
   });
 
   // Search Modal Filtering Logic
-  const searchResults = MOCK_SONGS.filter(song => {
+  const searchResults = songs.filter(song => {
       const matchesKeyword = song.title.toLowerCase().includes(searchKeyword.toLowerCase()) || 
                              song.artist.toLowerCase().includes(searchKeyword.toLowerCase()) ||
                              song.album.toLowerCase().includes(searchKeyword.toLowerCase());
       
       const matchesYear = searchYears.length === 0 || searchYears.includes(song.releaseYear);
-      const matchesCategory = searchCategories.length === 0 || searchCategories.includes(song.genre);
+      // Update search categories to use tags
+      const matchesCategory = searchCategories.length === 0 || 
+                              searchCategories.some(cat => song.tags && song.tags.includes(cat as string));
 
       return matchesKeyword && matchesYear && matchesCategory;
   });
@@ -195,13 +223,21 @@ const Home: React.FC = () => {
   // Check if Artist Icon should be active (List Open OR Artist Selected)
   const isArtistActive = isArtistListOpen || selectedArtist !== null;
 
+  if (loading) {
+      return (
+          <div className="flex flex-col items-center justify-center min-h-[80vh] text-brand-blue">
+              <Loader2 className="animate-spin w-12 h-12 mb-4" />
+              <p className="font-medium animate-pulse">데이터를 불러오는 중입니다...</p>
+          </div>
+      );
+  }
+
   return (
     <div className="min-h-screen pb-20 md:pb-0 relative">
       
       <div className="max-w-[1024px] mx-auto px-4 sm:px-6 lg:px-8 mt-6">
         
-        {/* Top Controls Area - Sticky with updated style & Mobile Hide Logic */}
-        {/* Updated: sticky top-0 for mobile, md:top-16 for PC because GNB is fixed on PC */}
+        {/* Top Controls Area - Sticky */}
         <div 
             className={`flex flex-col gap-6 mb-8 sticky top-0 md:top-16 z-30 bg-white/80 dark:bg-black/80 py-4 backdrop-blur-md transition-all duration-300 ease-in-out ${
                 showControls ? 'translate-y-0 opacity-100' : '-translate-y-[120%] opacity-0 pointer-events-none'
@@ -232,7 +268,6 @@ const Home: React.FC = () => {
                     </button>
 
                     {/* Fake Search Input to trigger Modal */}
-                    {/* Added min-w-0 to prevent horizontal scroll on mobile due to flex item growing too wide */}
                     <button 
                         onClick={() => setIsSearchOpen(true)}
                         className={`flex-grow flex items-center px-4 py-2.5 rounded-full bg-white dark:bg-transparent text-gray-400 border hover:border-brand-blue/30 transition-all group min-w-0 ${
@@ -246,6 +281,15 @@ const Home: React.FC = () => {
                             {selectedArtist ? `${selectedArtist}` : '검색어를 입력하거나 조건을 선택하세요...'}
                         </span>
                     </button>
+                    
+                    {/* Refresh Button */}
+                    <button 
+                        onClick={refreshData}
+                        className="p-3 rounded-full bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 text-gray-500 hover:text-brand-blue transition-colors flex-shrink-0"
+                        title="데이터 새로고침"
+                    >
+                        <RefreshCw size={20} />
+                    </button>
                 </div>
             </div>
 
@@ -253,7 +297,7 @@ const Home: React.FC = () => {
             {!isArtistListOpen && (
                 <div className="relative">
                      {selectedArtist ? (
-                        /* Back to Library Button (Replaces Filters when artist is selected) */
+                        /* Back to Library Button */
                         <div className="flex items-center">
                             <button 
                                 onClick={handleBackToLibrary}
@@ -266,10 +310,8 @@ const Home: React.FC = () => {
                      ) : (
                         /* Genre Tabs */
                         <>
-                            {/* Gradient Fade Masks for Overflow */}
                             <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white dark:from-black to-transparent pointer-events-none z-10" />
                             
-                            {/* Filters Container - Left Aligned */}
                             <div className="flex space-x-2 overflow-x-auto no-scrollbar pb-2 md:pb-0 snap-x scroll-smooth touch-pan-x">
                                 {filters.map((f) => (
                                 <button
@@ -300,10 +342,9 @@ const Home: React.FC = () => {
             <div className="animate-in fade-in slide-in-from-bottom-4 duration-300">
                 <h2 className="text-2xl font-bold mb-6 px-2">아티스트</h2>
                 
-                {/* Artist Grid: 1 Col Mobile, 2 Cols PC */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2">
-                    {currentArtists.map((artistName) => {
-                        const meta = ARTIST_META[artistName] || { 
+                    {currentArtists.map((artistName: string) => {
+                        const meta = artistMeta[artistName] || { 
                             name: artistName, 
                             subName: 'Artist', 
                             imageUrl: `https://picsum.photos/seed/${artistName}/200` 
@@ -314,16 +355,13 @@ const Home: React.FC = () => {
                                 onClick={() => handleArtistSelect(artistName)}
                                 className="flex items-center py-4 pr-4 pl-0 hover:bg-gray-50 dark:hover:bg-zinc-900/50 transition-colors group w-full text-left rounded-xl"
                             >
-                                {/* Image Left - with Zoom Effect */}
-                                <div className="w-28 h-28 rounded-xl overflow-hidden mr-5 flex-shrink-0">
+                                <div className="w-28 h-28 rounded-xl overflow-hidden mr-5 flex-shrink-0 bg-gray-200 dark:bg-zinc-800">
                                     <img 
                                         src={meta.imageUrl} 
                                         alt={artistName} 
                                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                                     />
                                 </div>
-                                
-                                {/* Text Center */}
                                 <div className="flex-grow">
                                     <div className="font-bold text-xl text-gray-900 dark:text-white group-hover:text-brand-blue transition-colors">
                                         {meta.name}
@@ -332,7 +370,6 @@ const Home: React.FC = () => {
                                         {meta.subName}
                                     </div>
                                 </div>
-                                {/* Arrow Right */}
                                 <ArrowRight className="text-gray-300 group-hover:text-brand-blue transition-colors w-6 h-6" />
                             </button>
                         );
@@ -385,6 +422,7 @@ const Home: React.FC = () => {
                         key={song.id} 
                         song={song} 
                         onArtistClick={handleArtistClickInCard}
+                        artistMeta={artistMeta[song.artist]}
                     />
                 ))}
                 {filteredSongs.length === 0 && (
@@ -434,19 +472,14 @@ const Home: React.FC = () => {
         )}
       </div>
 
-      {/* Search Modal (Bottom Sheet style) */}
+      {/* Search Modal */}
       {isSearchOpen && (
           <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-              {/* Backdrop */}
               <div 
                 className="absolute inset-0 bg-black/60 backdrop-blur-sm"
                 onClick={() => setIsSearchOpen(false)}
               />
-              
-              {/* Modal Content */}
               <div className="relative w-full max-w-2xl bg-white dark:bg-zinc-900 rounded-t-3xl sm:rounded-3xl shadow-2xl h-[85vh] sm:h-[80vh] flex flex-col overflow-hidden animate-in slide-in-from-bottom-10 duration-300">
-                  
-                  {/* Header */}
                   <div className="p-4 border-b border-gray-100 dark:border-zinc-800 flex items-center gap-3">
                       <Search className="text-brand-blue ml-2" />
                       <input 
@@ -465,9 +498,7 @@ const Home: React.FC = () => {
                       </button>
                   </div>
 
-                  {/* Filters Area */}
                   <div className="p-6 space-y-6 bg-gray-50 dark:bg-black/20">
-                      {/* Year Chips */}
                       <div>
                           <p className="text-xs font-bold text-gray-500 mb-3 uppercase">연도</p>
                           <div className="flex flex-wrap gap-2">
@@ -487,7 +518,6 @@ const Home: React.FC = () => {
                           </div>
                       </div>
 
-                      {/* Category Chips - Filter out ALL and NEW */}
                       <div>
                           <p className="text-xs font-bold text-gray-500 mb-3 uppercase">카테고리</p>
                           <div className="flex flex-wrap gap-2">
@@ -508,7 +538,6 @@ const Home: React.FC = () => {
                       </div>
                   </div>
 
-                  {/* Results List - Custom Scrollbar */}
                   <div className="flex-grow overflow-y-auto p-4 custom-scrollbar">
                       <p className="text-xs font-bold text-gray-500 mb-3">검색 결과 ({searchResults.length})</p>
                       <div className="space-y-2">
@@ -519,7 +548,7 @@ const Home: React.FC = () => {
                                 onClick={() => setIsSearchOpen(false)}
                                 className="flex items-center p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors group"
                               >
-                                  <img src={song.coverUrl} className="w-12 h-12 rounded-lg object-cover mr-3" alt="" />
+                                  <img src={song.coverUrl} className="w-12 h-12 rounded-lg object-cover mr-3 bg-gray-200 dark:bg-zinc-800" alt="" />
                                   <div className="flex-grow min-w-0">
                                       <div className="font-semibold text-gray-900 dark:text-white truncate group-hover:text-brand-blue">{song.title}</div>
                                       <div className="text-sm text-gray-500 dark:text-gray-400 truncate">{song.artist} • {song.releaseYear}</div>
@@ -533,12 +562,9 @@ const Home: React.FC = () => {
                           )}
                       </div>
                   </div>
-
               </div>
           </div>
       )}
-
-      {/* Styles for custom scrollbar in modal */}
       <style>{`
         .custom-scrollbar::-webkit-scrollbar {
           width: 6px;
@@ -561,13 +587,11 @@ const Home: React.FC = () => {
 const SongCard: React.FC<{ 
     song: Song; 
     onArtistClick: (e: React.MouseEvent, artist: string) => void;
-}> = ({ song, onArtistClick }) => {
-  // Find artist meta for korean name
-  const artistMeta = ARTIST_META[song.artist];
+    artistMeta?: ArtistMeta;
+}> = ({ song, onArtistClick, artistMeta }) => {
 
   return (
     <div className="flex flex-col h-full bg-transparent group">
-      {/* Cover Link - Removed Hover Dim/Play Icon */}
       <Link to={`/song/${song.id}`} className="relative block mb-4">
         <div className="aspect-square w-full overflow-hidden rounded-xl bg-gray-200 dark:bg-zinc-800">
             <img 
@@ -579,22 +603,17 @@ const SongCard: React.FC<{
         </div>
       </Link>
       
-      {/* Content: 4 Lines */}
       <div className="flex flex-col">
-        {/* 1. Original Title (Black) */}
-        {/* Updated: Added group-hover:text-brand-blue */}
         <Link to={`/song/${song.id}`} className="font-bold text-gray-900 dark:text-white text-xl leading-tight mb-1 group-hover:text-brand-blue transition-colors break-words break-keep" title={song.title}>
           {song.title}
         </Link>
 
-        {/* 2. Translated Title (Gray) */}
         {song.translatedTitle && (
              <Link to={`/song/${song.id}`} className="text-base text-gray-500 mb-1 hover:text-gray-700 dark:hover:text-gray-300 transition-colors break-words break-keep">
                 {song.translatedTitle}
             </Link>
         )}
         
-        {/* 3. Original Artist (Black/Clickable) + Translated Artist (Gray) Row */}
         <div className="flex items-center gap-2 mt-1 min-w-0">
              <button 
                 onClick={(e) => onArtistClick(e, song.artist)}
@@ -603,9 +622,10 @@ const SongCard: React.FC<{
                 {song.artist}
             </button>
             
-            {artistMeta && (
+            {/* Show Translated Artist from Meta (Artist Sheet) OR Song field (Song Sheet) */}
+            {(artistMeta?.subName || song.artistSubName) && (
                 <span className="text-sm text-gray-500 truncate flex-shrink min-w-0">
-                    {artistMeta.subName}
+                    {artistMeta?.subName || song.artistSubName}
                 </span>
             )}
         </div>

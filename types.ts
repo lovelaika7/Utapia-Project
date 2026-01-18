@@ -1,3 +1,4 @@
+
 export interface LyricLine {
   time?: string; // Optional timestamp for future sync
   original: string;
@@ -12,6 +13,7 @@ export interface Song {
   title: string;
   translatedTitle?: string; // Added translated title
   artist: string;
+  artistSubName?: string; // Added translated artist name from Song sheet
   album: string;
   coverUrl: string;
   youtubeId: string;
@@ -19,6 +21,8 @@ export interface Song {
   releaseYear: string;
   lyrics: LyricLine[];
   tags: string[];
+  aiInterpretation?: string; // Added AI interpretation
+  dateAdded?: string; // Added date for NEW filter (YYYY-MM-DD)
 }
 
 export type Theme = 'light' | 'dark';

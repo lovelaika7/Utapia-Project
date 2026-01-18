@@ -5,13 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Utapia</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/gh/sunn-us/SUIT/fonts/static/woff2/SUIT.css" rel="stylesheet">
     <script>
       tailwind.config = {
         darkMode: 'class',
         theme: {
           extend: {
             fontFamily: {
-              sans: ['Inter', 'Noto Sans KR', 'Noto Sans JP', 'sans-serif'],
+              sans: ['SUIT', 'Inter', 'Noto Sans KR', 'sans-serif'],
             },
             colors: {
               brand: {
@@ -26,10 +27,9 @@
         },
       }
     </script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
       body {
-        font-family: 'Inter', 'Noto Sans KR', 'Noto Sans JP', sans-serif;
+        font-family: 'SUIT', 'Inter', 'Noto Sans KR', sans-serif;
       }
       
       /* Globally hide scrollbar but keep functionality */
@@ -60,7 +60,8 @@
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
     "@google/genai": "https://esm.sh/@google/genai@^1.37.0",
     "react/": "https://esm.sh/react@^19.2.3/",
-    "react": "https://esm.sh/react@^19.2.3"
+    "react": "https://esm.sh/react@^19.2.3",
+    "@emailjs/browser": "https://esm.sh/@emailjs/browser@^4.4.1"
   }
 }
 </script>
