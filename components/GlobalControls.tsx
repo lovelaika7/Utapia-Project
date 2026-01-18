@@ -7,10 +7,22 @@ import emailjs from '@emailjs/browser';
 // ==========================================
 // SECURITY UPDATE:
 // Credentials are loaded from Environment Variables, with Fallbacks for immediate stability.
+// Implemented Safe Access to prevent 'process is not defined' in browser.
 // ==========================================
-const EMAILJS_SERVICE_ID = process.env.REACT_APP_EMAILJS_SERVICE_ID || 'service_qx1eu67';
-const EMAILJS_TEMPLATE_ID = process.env.REACT_APP_EMAILJS_TEMPLATE_ID || 'template_swqsja3';
-const EMAILJS_PUBLIC_KEY = process.env.REACT_APP_EMAILJS_PUBLIC_KEY || 'CAcEVIh1qvwH_Vs26';
+const getEnv = (key: string, fallback: string) => {
+  try {
+    if (typeof process !== 'undefined' && process.env && process.env[key]) {
+      return process.env[key] as string;
+    }
+  } catch (e) {
+    // process is not defined
+  }
+  return fallback;
+};
+
+const EMAILJS_SERVICE_ID = getEnv('REACT_APP_EMAILJS_SERVICE_ID', 'service_qx1eu67');
+const EMAILJS_TEMPLATE_ID = getEnv('REACT_APP_EMAILJS_TEMPLATE_ID', 'template_swqsja3');
+const EMAILJS_PUBLIC_KEY = getEnv('REACT_APP_EMAILJS_PUBLIC_KEY', 'CAcEVIh1qvwH_Vs26');
 
 export const RequestSongModal: React.FC = () => {
   const { isRequestModalOpen, setIsRequestModalOpen } = useUI();

@@ -26,8 +26,18 @@ export const generateAlbumArt = async (
   size: ImageSize
 ): Promise<string> => {
   
+  // Safely access API Key to prevent crash if process is undefined
+  let apiKey = undefined;
+  try {
+     if (typeof process !== 'undefined' && process.env) {
+         apiKey = process.env.API_KEY;
+     }
+  } catch (e) {
+      // ignore
+  }
+
   // Create instance just before call to ensure key is fresh
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = new GoogleGenAI({ apiKey: apiKey });
   
   try {
     const response = await ai.models.generateContent({
