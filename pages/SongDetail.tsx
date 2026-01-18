@@ -93,7 +93,8 @@ const SongDetail: React.FC = () => {
                         {/* Text Info */}
                         <div className="flex-1 min-w-0 w-full pt-1 lg:pt-0">
                             {/* 1. Original Title */}
-                            <h1 className="text-2xl md:text-3xl font-bold tracking-tight mb-1 leading-tight break-keep text-gray-900 dark:text-white lg:overflow-visible">
+                            {/* Updated: break-keep -> break-words to fix mobile overflow */}
+                            <h1 className="text-2xl md:text-3xl font-bold tracking-tight mb-1 leading-tight break-words text-gray-900 dark:text-white lg:overflow-visible">
                                 {song.title}
                             </h1>
 

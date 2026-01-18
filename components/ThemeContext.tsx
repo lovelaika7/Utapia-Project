@@ -4,16 +4,16 @@ import { Theme, ThemeContextType } from '../types';
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [theme, setTheme] = useState<Theme>('dark'); // Default to dark mode for music apps
+  const [theme, setTheme] = useState<Theme>('light'); // Default to light mode
 
   useEffect(() => {
-    // Check local storage or system preference on mount
+    // Check local storage on mount
     const savedTheme = localStorage.getItem('theme') as Theme;
     if (savedTheme) {
       setTheme(savedTheme);
-    } else if (window.matchMedia('(prefers-color-scheme: light)').matches) {
-      setTheme('light');
     }
+    // We default to light, so no need to check system preference for light explicitly.
+    // If you wanted to respect system dark mode, you could add logic here.
   }, []);
 
   useEffect(() => {
