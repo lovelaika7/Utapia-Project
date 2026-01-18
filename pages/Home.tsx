@@ -8,7 +8,7 @@ import { Song, Genre, ArtistMeta } from '../types';
 type FilterType = 'ALL' | 'NEW' | string;
 
 const Home: React.FC = () => {
-  const { songs, artistMeta, loading, refreshData } = useData();
+  const { songs, artistMeta, loading, isRefreshing, refreshData } = useData();
   const [searchParams, setSearchParams] = useSearchParams();
   const [filter, setFilter] = useState<FilterType>('ALL');
   const [selectedArtist, setSelectedArtist] = useState<string | null>(null);
@@ -282,13 +282,14 @@ const Home: React.FC = () => {
                         </span>
                     </button>
                     
-                    {/* Refresh Button */}
+                    {/* Refresh Button - Updated for Smooth Refresh */}
                     <button 
-                        onClick={refreshData}
-                        className="p-3 rounded-full bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 text-gray-500 hover:text-brand-blue transition-colors flex-shrink-0"
+                        onClick={() => refreshData()}
+                        disabled={isRefreshing}
+                        className={`p-3 rounded-full bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 text-gray-500 hover:text-brand-blue transition-colors flex-shrink-0 ${isRefreshing ? 'cursor-not-allowed opacity-80' : ''}`}
                         title="데이터 새로고침"
                     >
-                        <RefreshCw size={20} />
+                        <RefreshCw size={20} className={isRefreshing ? 'animate-spin text-brand-blue' : ''} />
                     </button>
                 </div>
             </div>

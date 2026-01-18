@@ -6,12 +6,11 @@ import emailjs from '@emailjs/browser';
 
 // ==========================================
 // SECURITY UPDATE:
-// Credentials are now loaded from Environment Variables.
-// Create a .env file in your project root to store these values.
+// Credentials are loaded from Environment Variables, with Fallbacks for immediate stability.
 // ==========================================
-const EMAILJS_SERVICE_ID = process.env.REACT_APP_EMAILJS_SERVICE_ID || '';
-const EMAILJS_TEMPLATE_ID = process.env.REACT_APP_EMAILJS_TEMPLATE_ID || '';
-const EMAILJS_PUBLIC_KEY = process.env.REACT_APP_EMAILJS_PUBLIC_KEY || '';
+const EMAILJS_SERVICE_ID = process.env.REACT_APP_EMAILJS_SERVICE_ID || 'service_qx1eu67';
+const EMAILJS_TEMPLATE_ID = process.env.REACT_APP_EMAILJS_TEMPLATE_ID || 'template_swqsja3';
+const EMAILJS_PUBLIC_KEY = process.env.REACT_APP_EMAILJS_PUBLIC_KEY || 'CAcEVIh1qvwH_Vs26';
 
 export const RequestSongModal: React.FC = () => {
   const { isRequestModalOpen, setIsRequestModalOpen } = useUI();
@@ -32,8 +31,8 @@ export const RequestSongModal: React.FC = () => {
     }
 
     if (!EMAILJS_SERVICE_ID || !EMAILJS_TEMPLATE_ID || !EMAILJS_PUBLIC_KEY) {
-        setErrorMessage("이메일 설정 오류: 환경 변수를 확인해주세요.");
-        console.error("EmailJS Environment variables are missing.");
+        setErrorMessage("이메일 설정 오류: 환경 변수 또는 키 설정을 확인해주세요.");
+        console.error("EmailJS credentials missing.");
         return;
     }
 

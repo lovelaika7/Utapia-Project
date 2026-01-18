@@ -1,12 +1,12 @@
 import { Song, ArtistMeta, LyricLine, Genre } from '../types';
 
 // Google Sheet Configuration
-// Loaded from Environment Variables for better security
-const BASE_PUB_URL = process.env.REACT_APP_SHEET_URL || '';
+// Loaded from Environment Variables with fallback for immediate stability
+const BASE_PUB_URL = process.env.REACT_APP_SHEET_URL || 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQHrCOSe45I2r-X7jM7x-eLLVtDtWeL9zTGO5ndjtF89ojmxTcAcOsUJkRwasCyj21JZhgbXuN5D1Tk/pub';
 
 export const SHEET_CONFIG = {
-  SONG_GID: process.env.REACT_APP_SHEET_SONG_GID || '0', 
-  ARTIST_GID: process.env.REACT_APP_SHEET_ARTIST_GID || '0', 
+  SONG_GID: process.env.REACT_APP_SHEET_SONG_GID || '2105753516', 
+  ARTIST_GID: process.env.REACT_APP_SHEET_ARTIST_GID || '172424194', 
 };
 
 // YouTube ID Extractor
@@ -126,7 +126,7 @@ const parseLyrics = (lyricsRaw: string): LyricLine[] => {
 
 export const fetchSheetData = async () => {
   if (!BASE_PUB_URL) {
-      console.error("Missing Google Sheet URL (BASE_PUB_URL). Check .env file.");
+      console.error("Missing Google Sheet URL (BASE_PUB_URL). Check .env file or Fallback values.");
       return { songs: [], artistMeta: {} };
   }
 

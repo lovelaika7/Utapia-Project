@@ -6,6 +6,7 @@ interface DataContextType {
   songs: Song[];
   artistMeta: Record<string, ArtistMeta>;
   loading: boolean;
+  isRefreshing: boolean;
   refreshData: () => Promise<void>;
 }
 
@@ -15,19 +16,33 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [songs, setSongs] = useState<Song[]>([]);
   const [artistMeta, setArtistMeta] = useState<Record<string, ArtistMeta>>({});
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const refreshData = async () => {
-    setLoading(true);
-    const data = await fetchSheetData();
-    
-    // Sort songs by newest first (optional)
-    const sortedSongs = data.songs.sort((a, b) => 
-        parseInt(b.releaseYear) - parseInt(a.releaseYear)
-    );
+    // Only show full loading screen if we don't have data yet
+    if (songs.length === 0) {
+        setLoading(true);
+    } else {
+        setIsRefreshing(true);
+    }
 
-    setSongs(sortedSongs);
-    setArtistMeta(data.artistMeta);
-    setLoading(false);
+    try {
+        const data = await fetchSheetData();
+        
+        // Sort songs by newest first (based on release year for now)
+        // Ideally should use dateAdded if available and reliable
+        const sortedSongs = data.songs.sort((a, b) => 
+            parseInt(b.releaseYear) - parseInt(a.releaseYear)
+        );
+
+        setSongs(sortedSongs);
+        setArtistMeta(data.artistMeta);
+    } catch (error) {
+        console.error("Error refreshing data:", error);
+    } finally {
+        setLoading(false);
+        setIsRefreshing(false);
+    }
   };
 
   useEffect(() => {
@@ -35,7 +50,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   return (
-    <DataContext.Provider value={{ songs, artistMeta, loading, refreshData }}>
+    <DataContext.Provider value={{ songs, artistMeta, loading, isRefreshing, refreshData }}>
       {children}
     </DataContext.Provider>
   );
