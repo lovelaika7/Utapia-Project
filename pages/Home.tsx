@@ -126,7 +126,8 @@ const Home: React.FC = () => {
   // Search Modal Filtering Logic
   const searchResults = MOCK_SONGS.filter(song => {
       const matchesKeyword = song.title.toLowerCase().includes(searchKeyword.toLowerCase()) || 
-                             song.artist.toLowerCase().includes(searchKeyword.toLowerCase());
+                             song.artist.toLowerCase().includes(searchKeyword.toLowerCase()) ||
+                             song.album.toLowerCase().includes(searchKeyword.toLowerCase());
       
       const matchesYear = searchYears.length === 0 || searchYears.includes(song.releaseYear);
       const matchesCategory = searchCategories.length === 0 || searchCategories.includes(song.genre);

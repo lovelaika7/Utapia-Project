@@ -19,7 +19,7 @@ const Navbar: React.FC = () => {
             <svg width="140" height="40" viewBox="0 0 140 40" fill="none" xmlns="http://www.w3.org/2000/svg" className="transition-transform group-hover:scale-105">
                 <defs>
                     <linearGradient id="brand-gradient" x1="0" y1="0" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor="#0fe06d" />
+                        <stop offset="0%" stopColor="#00c6c6" />
                         <stop offset="100%" stopColor="#00c6ff" />
                     </linearGradient>
                 </defs>

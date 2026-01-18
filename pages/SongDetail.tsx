@@ -112,11 +112,16 @@ const SongDetail: React.FC = () => {
 
                             {/* 4. Translated Artist */}
                             {artistMeta && (
-                                <p className="text-sm md:text-base text-gray-500 dark:text-gray-400 mb-4 md:mb-6 truncate">
+                                <p className="text-sm md:text-base text-gray-500 dark:text-gray-400 mb-1 truncate">
                                     {artistMeta.subName}
                                 </p>
                             )}
                             
+                            {/* 5. Album & Year (Added) */}
+                            <p className="text-sm md:text-base text-gray-500 dark:text-gray-400 mb-4 md:mb-6 truncate">
+                                {song.album} • {song.releaseYear}
+                            </p>
+
                             {/* Category Chips - Link to Home with filter */}
                             <div className="flex flex-wrap gap-2">
                                 {uniqueChips.map((cat, idx) => (
