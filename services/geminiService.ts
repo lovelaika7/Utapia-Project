@@ -26,14 +26,16 @@ export const generateAlbumArt = async (
   size: ImageSize
 ): Promise<string> => {
   
-  // Safely access API Key to prevent crash if process is undefined
+  // Safely access API Key to prevent crash if process is undefined in browser environment
   let apiKey = undefined;
   try {
+     // Checking for process global first to avoid ReferenceError
+     // @ts-ignore
      if (typeof process !== 'undefined' && process.env) {
          apiKey = process.env.API_KEY;
      }
   } catch (e) {
-      // ignore
+      // ignore reference errors
   }
 
   // Create instance just before call to ensure key is fresh

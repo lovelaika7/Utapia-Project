@@ -6,23 +6,12 @@ import emailjs from '@emailjs/browser';
 
 // ==========================================
 // SECURITY UPDATE:
-// Credentials are loaded from Environment Variables, with Fallbacks for immediate stability.
-// Implemented Safe Access to prevent 'process is not defined' in browser.
+// Keys are hardcoded to ensure stability in all browser environments.
+// These are public keys and are safe to be exposed in client-side code.
 // ==========================================
-const getEnv = (key: string, fallback: string) => {
-  try {
-    if (typeof process !== 'undefined' && process.env && process.env[key]) {
-      return process.env[key] as string;
-    }
-  } catch (e) {
-    // process is not defined
-  }
-  return fallback;
-};
-
-const EMAILJS_SERVICE_ID = getEnv('REACT_APP_EMAILJS_SERVICE_ID', 'service_qx1eu67');
-const EMAILJS_TEMPLATE_ID = getEnv('REACT_APP_EMAILJS_TEMPLATE_ID', 'template_swqsja3');
-const EMAILJS_PUBLIC_KEY = getEnv('REACT_APP_EMAILJS_PUBLIC_KEY', 'CAcEVIh1qvwH_Vs26');
+const EMAILJS_SERVICE_ID = 'service_qx1eu67';
+const EMAILJS_TEMPLATE_ID = 'template_swqsja3';
+const EMAILJS_PUBLIC_KEY = 'CAcEVIh1qvwH_Vs26';
 
 export const RequestSongModal: React.FC = () => {
   const { isRequestModalOpen, setIsRequestModalOpen } = useUI();
@@ -43,8 +32,7 @@ export const RequestSongModal: React.FC = () => {
     }
 
     if (!EMAILJS_SERVICE_ID || !EMAILJS_TEMPLATE_ID || !EMAILJS_PUBLIC_KEY) {
-        setErrorMessage("이메일 설정 오류: 환경 변수 또는 키 설정을 확인해주세요.");
-        console.error("EmailJS credentials missing.");
+        setErrorMessage("이메일 설정 오류.");
         return;
     }
 

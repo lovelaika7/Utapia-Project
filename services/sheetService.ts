@@ -1,24 +1,12 @@
 import { Song, ArtistMeta, LyricLine, Genre } from '../types';
 
-// Helper for safe environment variable access to prevent "process is not defined" crash in browser
-const getEnv = (key: string, fallback: string) => {
-  try {
-    if (typeof process !== 'undefined' && process.env && process.env[key]) {
-      return process.env[key] as string;
-    }
-  } catch (e) {
-    // process is not defined in strict browser environments
-  }
-  return fallback;
-};
-
 // Google Sheet Configuration
-// Loaded from Environment Variables with fallback for immediate stability
-const BASE_PUB_URL = getEnv('REACT_APP_SHEET_URL', 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQHrCOSe45I2r-X7jM7x-eLLVtDtWeL9zTGO5ndjtF89ojmxTcAcOsUJkRwasCyj21JZhgbXuN5D1Tk/pub');
+// Hardcoded for stability in browser environments (Netlify/Vercel) to avoid "process is not defined" errors.
+const BASE_PUB_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQHrCOSe45I2r-X7jM7x-eLLVtDtWeL9zTGO5ndjtF89ojmxTcAcOsUJkRwasCyj21JZhgbXuN5D1Tk/pub';
 
 export const SHEET_CONFIG = {
-  SONG_GID: getEnv('REACT_APP_SHEET_SONG_GID', '2105753516'), 
-  ARTIST_GID: getEnv('REACT_APP_SHEET_ARTIST_GID', '172424194'), 
+  SONG_GID: '2105753516', 
+  ARTIST_GID: '172424194', 
 };
 
 // YouTube ID Extractor
@@ -90,10 +78,6 @@ const parseCSV = (text: string) => {
 };
 
 // Parse Lyrics
-// Logic:
-// 1. Try to split by double newlines (\n\n) to identify explicit blocks.
-// 2. If that results in a single block (and it's long), assume strict 3-line format (Original, Romanization, Translation) 
-//    and chunk the lines by 3.
 const parseLyrics = (lyricsRaw: string): LyricLine[] => {
     if (!lyricsRaw) return [];
     
@@ -184,7 +168,6 @@ export const fetchSheetData = async () => {
     }
 
     // --- Parse Artists ---
-    // Columns: 0:Name(Orig), 1:Name(Trans), 2:ImageURL
     const artistMeta: Record<string, ArtistMeta> = {};
 
     if (artistText && !artistText.trim().startsWith('<!DOCTYPE html>')) {
@@ -202,8 +185,6 @@ export const fetchSheetData = async () => {
     }
 
     // --- Parse Songs ---
-    // 0:Title(Orig), 1:Title(Trans), 2:Artist(Orig), 3:Artist(Trans), 4:Category, 5:Album, 6:Year, 7:YT, 8:Cover, 9:Lyrics, 10:AI
-    // 11: Date Added (YYYY-MM-DD)
     const songRows = parseCSV(songText).slice(1);
     console.log(`Fetched ${songRows.length} song rows.`);
 
@@ -213,7 +194,7 @@ export const fetchSheetData = async () => {
         const artistName = row[2].trim();
         const artistTrans = row[3];
         
-        // Parse Categories (Column 4)
+        // Parse Categories
         const categoryRaw = row[4] || 'K-POP';
         const categories = categoryRaw.split(',').map(s => s.trim()).filter(Boolean);
         const primaryGenre = (categories[0] as Genre) || 'K-POP';
